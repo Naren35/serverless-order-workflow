@@ -1,17 +1,22 @@
 AWSTemplateFormatVersion: '2010-09-09'
+
 Description: >
   OpenMarket Serverless Order Workflow
-  Initial CloudFormation Stack
 
 Resources:
 
-##Creation of SQS
+  #################################################
+  # Amazon SQS Queue
+  #################################################
 
   OrderQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: openmarket-order-queue
-##Creation of IAM for Lambda
+
+  #################################################
+  # IAM Role for Lambda
+  #################################################
 
   AcceptOrderLambdaRole:
     Type: AWS::IAM::Role
@@ -41,9 +46,37 @@ Resources:
                   - sqs:SendMessage
                 Resource: !GetAtt OrderQueue.Arn
 
+  #################################################
+  # Accept Order Lambda
+  #################################################
+
+  AcceptOrderLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: OpenMarket-AcceptOrder
+
+      Runtime: python3.13
+
+      Handler: lambda_function.lambda_handler
+
+      Role: !GetAtt AcceptOrderLambdaRole.Arn
+
+      Code:
+        S3Bucket: main-openmarket-serverless-order-workflow
+        S3Key: accept-order.zip
+
+      Timeout: 30
+
+      Environment:
+        Variables:
+          QUEUE_URL: !Ref OrderQueue
 
 Outputs:
-##sqs
+
+  #################################################
+  # SQS Outputs
+  #################################################
+
   QueueURL:
     Description: URL of the SQS Queue
     Value: !Ref OrderQueue
@@ -52,7 +85,18 @@ Outputs:
     Description: ARN of the SQS Queue
     Value: !GetAtt OrderQueue.Arn
 
-##IAM
+  #################################################
+  # IAM Outputs
+  #################################################
+
   LambdaRoleArn:
     Description: IAM Role ARN
     Value: !GetAtt AcceptOrderLambdaRole.Arn
+
+  #################################################
+  # Lambda Outputs
+  #################################################
+
+  LambdaFunctionArn:
+    Description: AcceptOrder Lambda ARN
+    Value: !GetAtt AcceptOrderLambda.Arn
