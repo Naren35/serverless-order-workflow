@@ -190,9 +190,6 @@ Resources:
 
 Outputs:
 
-  #################################################
-  # SQS Outputs
-  #################################################
   QueueURL:
     Description: URL of the SQS Queue
     Value: !Ref OrderQueue
@@ -201,37 +198,22 @@ Outputs:
     Description: ARN of the SQS Queue
     Value: !GetAtt OrderQueue.Arn
 
-  #################################################
-  # IAM Output
-  #################################################
   LambdaRoleArn:
     Description: IAM Role ARN
     Value: !GetAtt AcceptOrderLambdaRole.Arn
 
-  #################################################
-  # Lambda Output
-  #################################################
   LambdaFunctionArn:
     Description: AcceptOrder Lambda ARN
     Value: !GetAtt AcceptOrderLambda.Arn
 
-  #################################################
-  # API Gateway Output
-  #################################################
   ApiEndpoint:
     Description: API Gateway Endpoint
     Value: !GetAtt HttpApi.ApiEndpoint
 
-  #################################################
-  # ProcessOrder Lambda Output
-  #################################################
   ProcessOrderLambdaArn:
     Description: ProcessOrder Lambda ARN
     Value: !GetAtt ProcessOrderLambda.Arn
 
-  #################################################
-  # DynamoDB Output
-  #################################################
   OrdersTableName:
     Description: DynamoDB Table Name
     Value: !Ref OrdersTable
