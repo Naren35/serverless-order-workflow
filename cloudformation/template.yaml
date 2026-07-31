@@ -234,6 +234,11 @@ Outputs:
   ApiEndpoint:
     Description: API Gateway Endpoint
     Value: !GetAtt HttpApi.ApiEndpoint
-    ProcessOrderLambdaArn:
+
+  #################################################
+  # ProcessOrder Lambda Output
+  #################################################
+
+  ProcessOrderLambdaArn:
     Description: ProcessOrder Lambda ARN
     Value: !GetAtt ProcessOrderLambda.Arn
