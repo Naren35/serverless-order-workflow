@@ -70,6 +70,59 @@ Resources:
       Environment:
         Variables:
           QUEUE_URL: !Ref OrderQueue
+  #################################################
+  # HTTP API Gateway
+  #################################################
+
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: OpenMarket-OrderAPI
+      ProtocolType: HTTP
+  #################################################
+  # API Gateway Integration
+  #################################################
+
+  OrdersIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt AcceptOrderLambda.Arn
+      PayloadFormatVersion: "2.0"
+  #################################################
+  # POST /orders
+  #################################################
+
+  OrdersRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: "POST /orders"
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref OrdersIntegration
+  #################################################
+  # Default Stage
+  #################################################
+
+  ApiStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: "$default"
+      AutoDeploy: true
+  #################################################
+  # Lambda Permission
+  #################################################
+
+  ApiGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref AcceptOrderLambda
+      Principal: apigateway.amazonaws.com
 
 Outputs:
 
@@ -100,3 +153,6 @@ Outputs:
   LambdaFunctionArn:
     Description: AcceptOrder Lambda ARN
     Value: !GetAtt AcceptOrderLambda.Arn
+    ApiEndpoint:
+    Description: API Gateway Endpoint
+    Value: !GetAtt HttpApi.ApiEndpoint
