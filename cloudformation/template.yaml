@@ -47,6 +47,23 @@ Resources:
                 Resource: !GetAtt OrderQueue.Arn
 
   #################################################
+  # DynamoDB Table
+  #################################################
+
+  OrdersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: OpenMarketOrders
+      BillingMode: PAY_PER_REQUEST
+
+      AttributeDefinitions:
+        - AttributeName: OrderId
+          AttributeType: S
+
+      KeySchema:
+        - AttributeName: OrderId
+          KeyType: HASH
+  #################################################
   # Accept Order Lambda
   #################################################
 
@@ -89,6 +106,10 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - sts:AssumeRole
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+              Resource: !GetAtt OrdersTable.Arn
 
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -242,3 +263,8 @@ Outputs:
   ProcessOrderLambdaArn:
     Description: ProcessOrder Lambda ARN
     Value: !GetAtt ProcessOrderLambda.Arn
+
+  ###############################################
+  OrdersTableName:
+    Description: DynamoDB Table Name
+    Value: !Ref OrdersTable   
