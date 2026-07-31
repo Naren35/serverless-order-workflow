@@ -70,6 +70,7 @@ Resources:
       Environment:
         Variables:
           QUEUE_URL: !Ref OrderQueue
+
   #################################################
   # HTTP API Gateway
   #################################################
@@ -79,6 +80,7 @@ Resources:
     Properties:
       Name: OpenMarket-OrderAPI
       ProtocolType: HTTP
+
   #################################################
   # API Gateway Integration
   #################################################
@@ -90,8 +92,9 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationUri: !GetAtt AcceptOrderLambda.Arn
       PayloadFormatVersion: "2.0"
+
   #################################################
-  # POST /orders
+  # POST /orders Route
   #################################################
 
   OrdersRoute:
@@ -103,8 +106,9 @@ Resources:
         - /
         - - integrations
           - !Ref OrdersIntegration
+
   #################################################
-  # Default Stage
+  # Default API Stage
   #################################################
 
   ApiStage:
@@ -113,8 +117,9 @@ Resources:
       ApiId: !Ref HttpApi
       StageName: "$default"
       AutoDeploy: true
+
   #################################################
-  # Lambda Permission
+  # Allow API Gateway to Invoke Lambda
   #################################################
 
   ApiGatewayPermission:
@@ -123,6 +128,7 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !Ref AcceptOrderLambda
       Principal: apigateway.amazonaws.com
+      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*"
 
 Outputs:
 
@@ -139,7 +145,7 @@ Outputs:
     Value: !GetAtt OrderQueue.Arn
 
   #################################################
-  # IAM Outputs
+  # IAM Output
   #################################################
 
   LambdaRoleArn:
@@ -147,12 +153,17 @@ Outputs:
     Value: !GetAtt AcceptOrderLambdaRole.Arn
 
   #################################################
-  # Lambda Outputs
+  # Lambda Output
   #################################################
 
   LambdaFunctionArn:
     Description: AcceptOrder Lambda ARN
     Value: !GetAtt AcceptOrderLambda.Arn
-    ApiEndpoint:
+
+  #################################################
+  # API Gateway Output
+  #################################################
+
+  ApiEndpoint:
     Description: API Gateway Endpoint
     Value: !GetAtt HttpApi.ApiEndpoint
