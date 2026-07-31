@@ -72,6 +72,73 @@ Resources:
           QUEUE_URL: !Ref OrderQueue
 
   #################################################
+  # IAM Role for ProcessOrder Lambda
+  #################################################
+
+  ProcessOrderLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: OpenMarket-ProcessOrderLambdaRole
+
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+      Policies:
+        - PolicyName: SQSReceiveMessagePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt OrderQueue.Arn
+                
+  #################################################
+  # Process Order Lambda
+  #################################################
+
+  ProcessOrderLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: OpenMarket-ProcessOrder
+
+      Runtime: python3.13
+
+      Handler: lambda_function.lambda_handler
+
+      Role: !GetAtt ProcessOrderLambdaRole.Arn
+
+      Code:
+        S3Bucket: main-openmarket-serverless-order-workflow
+        S3Key: process-order.zip
+
+      Timeout: 30
+
+  #################################################
+  # SQS Event Source Mapping
+  #################################################
+
+  ProcessOrderEventSource:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 5
+      EventSourceArn: !GetAtt OrderQueue.Arn
+      FunctionName: !Ref ProcessOrderLambda
+      Enabled: true
+  
+  #################################################
   # HTTP API Gateway
   #################################################
 
@@ -167,3 +234,6 @@ Outputs:
   ApiEndpoint:
     Description: API Gateway Endpoint
     Value: !GetAtt HttpApi.ApiEndpoint
+    ProcessOrderLambdaArn:
+    Description: ProcessOrder Lambda ARN
+    Value: !GetAtt ProcessOrderLambda.Arn
