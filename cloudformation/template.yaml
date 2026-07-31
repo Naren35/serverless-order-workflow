@@ -111,7 +111,7 @@ Resources:
   #################################################
   # Process Order Lambda
   #################################################
-  ProcessOrderLambda:
+   ProcessOrderLambda:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: OpenMarket-ProcessOrder
