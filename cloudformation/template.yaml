@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  OpenMarket Serverless Order Workflow
+  Initial CloudFormation Stack
+
+Resources:
+
+  OrderQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: openmarket-order-queue
+
+Outputs:
+
+  QueueURL:
+    Description: URL of the SQS Queue
+    Value: !Ref OrderQueue
+
+  QueueArn:
+    Description: ARN of the SQS Queue
+    Value: !GetAtt OrderQueue.Arn
