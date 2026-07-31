@@ -1,30 +1,17 @@
-AWSTemplateFormatVersion: '2010-09-09'
-
-Description: >
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
   OpenMarket Serverless Order Workflow
-
 Resources:
-
-  #################################################
-  # Amazon SQS Queue
-  #################################################
-
   OrderQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: openmarket-order-queue
-
-  #################################################
-  # IAM Role for Lambda
-  #################################################
-
   AcceptOrderLambdaRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: OpenMarket-AcceptOrderLambdaRole
-
       AssumeRolePolicyDocument:
-        Version: "2012-10-17"
+        Version: 2012-10-17
         Statement:
           - Effect: Allow
             Principal:
@@ -32,73 +19,48 @@ Resources:
                 - lambda.amazonaws.com
             Action:
               - sts:AssumeRole
-
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-
       Policies:
         - PolicyName: SQSSendMessagePolicy
           PolicyDocument:
-            Version: "2012-10-17"
+            Version: 2012-10-17
             Statement:
               - Effect: Allow
                 Action:
                   - sqs:SendMessage
-                Resource: !GetAtt OrderQueue.Arn
-
-  #################################################
-  # DynamoDB Table
-  #################################################
-
+                Resource: OrderQueue.Arn
   OrdersTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: OpenMarketOrders
       BillingMode: PAY_PER_REQUEST
-
       AttributeDefinitions:
         - AttributeName: OrderId
           AttributeType: S
-
       KeySchema:
         - AttributeName: OrderId
           KeyType: HASH
-  #################################################
-  # Accept Order Lambda
-  #################################################
-
   AcceptOrderLambda:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: OpenMarket-AcceptOrder
-
       Runtime: python3.13
-
       Handler: lambda_function.lambda_handler
-
-      Role: !GetAtt AcceptOrderLambdaRole.Arn
-
+      Role: AcceptOrderLambdaRole.Arn
       Code:
         S3Bucket: main-openmarket-serverless-order-workflow
         S3Key: accept-order.zip
-
       Timeout: 30
-
       Environment:
         Variables:
-          QUEUE_URL: !Ref OrderQueue
-
-  #################################################
-  # IAM Role for ProcessOrder Lambda
-  #################################################
-
-  ProcessOrderLambdaRole:
+          QUEUE_URL: OrderQueue
+  ProcessOrderLambdaRole: null
   Type: AWS::IAM::Role
   Properties:
     RoleName: OpenMarket-ProcessOrderLambdaRole
-
     AssumeRolePolicyDocument:
-      Version: "2012-10-17"
+      Version: 2012-10-17
       Statement:
         - Effect: Allow
           Principal:
@@ -106,167 +68,94 @@ Resources:
               - lambda.amazonaws.com
           Action:
             - sts:AssumeRole
-
     ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-
     Policies:
       - PolicyName: ProcessOrderPolicy
         PolicyDocument:
-          Version: "2012-10-17"
+          Version: 2012-10-17
           Statement:
-
             - Effect: Allow
               Action:
                 - sqs:ReceiveMessage
                 - sqs:DeleteMessage
                 - sqs:GetQueueAttributes
-              Resource: !GetAtt OrderQueue.Arn
-
+              Resource: OrderQueue.Arn
             - Effect: Allow
               Action:
                 - dynamodb:PutItem
-              Resource: !GetAtt OrdersTable.Arn
-                
-  #################################################
-  # Process Order Lambda
-  #################################################
-
+              Resource: OrdersTable.Arn
   ProcessOrderLambda:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: OpenMarket-ProcessOrder
-
       Runtime: python3.13
-
       Handler: lambda_function.lambda_handler
-
-      Role: !GetAtt ProcessOrderLambdaRole.Arn
-
+      Role: ProcessOrderLambdaRole.Arn
       Code:
         S3Bucket: main-openmarket-serverless-order-workflow
         S3Key: process-order.zip
-
       Timeout: 30
-
-  #################################################
-  # SQS Event Source Mapping
-  #################################################
-
   ProcessOrderEventSource:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
       BatchSize: 5
-      EventSourceArn: !GetAtt OrderQueue.Arn
-      FunctionName: !Ref ProcessOrderLambda
+      EventSourceArn: OrderQueue.Arn
+      FunctionName: ProcessOrderLambda
       Enabled: true
-  
-  #################################################
-  # HTTP API Gateway
-  #################################################
-
   HttpApi:
     Type: AWS::ApiGatewayV2::Api
     Properties:
       Name: OpenMarket-OrderAPI
       ProtocolType: HTTP
-
-  #################################################
-  # API Gateway Integration
-  #################################################
-
   OrdersIntegration:
     Type: AWS::ApiGatewayV2::Integration
     Properties:
-      ApiId: !Ref HttpApi
+      ApiId: HttpApi
       IntegrationType: AWS_PROXY
-      IntegrationUri: !GetAtt AcceptOrderLambda.Arn
+      IntegrationUri: AcceptOrderLambda.Arn
       PayloadFormatVersion: "2.0"
-
-  #################################################
-  # POST /orders Route
-  #################################################
-
   OrdersRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
-      ApiId: !Ref HttpApi
-      RouteKey: "POST /orders"
-      Target: !Join
+      ApiId: HttpApi
+      RouteKey: POST /orders
+      Target:
         - /
         - - integrations
-          - !Ref OrdersIntegration
-
-  #################################################
-  # Default API Stage
-  #################################################
-
+          - OrdersIntegration
   ApiStage:
     Type: AWS::ApiGatewayV2::Stage
     Properties:
-      ApiId: !Ref HttpApi
-      StageName: "$default"
+      ApiId: HttpApi
+      StageName: $default
       AutoDeploy: true
-
-  #################################################
-  # Allow API Gateway to Invoke Lambda
-  #################################################
-
   ApiGatewayPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !Ref AcceptOrderLambda
+      FunctionName: AcceptOrderLambda
       Principal: apigateway.amazonaws.com
-      SourceArn: !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*"
-
+      SourceArn: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*
 Outputs:
-
-  #################################################
-  # SQS Outputs
-  #################################################
-
   QueueURL:
     Description: URL of the SQS Queue
-    Value: !Ref OrderQueue
-
+    Value: OrderQueue
   QueueArn:
     Description: ARN of the SQS Queue
-    Value: !GetAtt OrderQueue.Arn
-
-  #################################################
-  # IAM Output
-  #################################################
-
+    Value: OrderQueue.Arn
   LambdaRoleArn:
     Description: IAM Role ARN
-    Value: !GetAtt AcceptOrderLambdaRole.Arn
-
-  #################################################
-  # Lambda Output
-  #################################################
-
+    Value: AcceptOrderLambdaRole.Arn
   LambdaFunctionArn:
     Description: AcceptOrder Lambda ARN
-    Value: !GetAtt AcceptOrderLambda.Arn
-
-  #################################################
-  # API Gateway Output
-  #################################################
-
+    Value: AcceptOrderLambda.Arn
   ApiEndpoint:
     Description: API Gateway Endpoint
-    Value: !GetAtt HttpApi.ApiEndpoint
-
-  #################################################
-  # ProcessOrder Lambda Output
-  #################################################
-
+    Value: HttpApi.ApiEndpoint
   ProcessOrderLambdaArn:
     Description: ProcessOrder Lambda ARN
-    Value: !GetAtt ProcessOrderLambda.Arn
-
-  ###############################################
+    Value: ProcessOrderLambda.Arn
   OrdersTableName:
     Description: DynamoDB Table Name
-    Value: !Ref OrdersTable   
+    Value: OrdersTable
