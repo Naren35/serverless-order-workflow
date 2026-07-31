@@ -15,35 +15,43 @@ Resources:
       QueueName: openmarket-order-queue
 
   #################################################
-  # IAM Role for Lambda
+  # IAM Role for ProcessOrder Lambda
   #################################################
-  AcceptOrderLambdaRole:
-  Type: AWS::IAM::Role
-  Properties:
-    RoleName: OpenMarket-AcceptOrderLambdaRole
 
-    AssumeRolePolicyDocument:
-      Version: "2012-10-17"
-      Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-              - lambda.amazonaws.com
-          Action:
-            - sts:AssumeRole
+  ProcessOrderLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: OpenMarket-ProcessOrderLambdaRole
 
-    ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
 
-    Policies:
-      - PolicyName: SQSSendMessagePolicy
-        PolicyDocument:
-          Version: "2012-10-17"
-          Statement:
-            - Effect: Allow
-              Action:
-                - sqs:SendMessage
-              Resource: !GetAtt OrderQueue.Arn
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+      Policies:
+        - PolicyName: ProcessOrderPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt OrderQueue.Arn
+
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource: !GetAtt OrdersTable.Arn
 
   #################################################
   # DynamoDB Table
