@@ -107,7 +107,6 @@ Resources:
       Environment:
         Variables:
           QUEUE_URL: !Ref OrderQueue
-
   #################################################
   # Process Order Lambda
   #################################################
