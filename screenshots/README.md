@@ -13,3 +13,8 @@ This folder contains screenshots demonstrating the successful deployment of the 
 - File: `02-cloudformation-stack-outputs.png`
 - Description:
   Displays the generated Queue URL and Queue ARN after the successful deployment.
+
+  ## Deployment Screenshots
+
+### 3.IAM Role
+![IAM](screenshots/03-iam-role-created.png)
