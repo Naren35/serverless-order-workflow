@@ -5,13 +5,45 @@ Description: >
 
 Resources:
 
+##Creation of SQS
+
   OrderQueue:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: openmarket-order-queue
+##Creation of IAM for Lambda
+
+  AcceptOrderLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: OpenMarket-AcceptOrderLambdaRole
+
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+      Policies:
+        - PolicyName: SQSSendMessagePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource: !GetAtt OrderQueue.Arn
+
 
 Outputs:
-
+##sqs
   QueueURL:
     Description: URL of the SQS Queue
     Value: !Ref OrderQueue
@@ -19,3 +51,8 @@ Outputs:
   QueueArn:
     Description: ARN of the SQS Queue
     Value: !GetAtt OrderQueue.Arn
+
+##IAM
+  LambdaRoleArn:
+    Description: IAM Role ARN
+    Value: !GetAtt AcceptOrderLambdaRole.Arn
