@@ -111,18 +111,20 @@ Resources:
   #################################################
   # Process Order Lambda
   #################################################
-  ProcessOrderLambda:
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: OpenMarket-ProcessOrder
-      Runtime: python3.13
-      Handler: lambda_function.lambda_handler
-      Role: !GetAtt ProcessOrderLambdaRole.Arn
-      Code:
-        S3Bucket: main-openmarket-serverless-order-workflow
-        S3Key: process-order.zip
-      Timeout: 30
-
+ ProcessOrderLambda:
+  Type: AWS::Lambda::Function
+  Properties:
+    FunctionName: OpenMarket-ProcessOrder
+    Runtime: python3.13
+    Handler: lambda_function.lambda_handler
+    Role: !GetAtt ProcessOrderLambdaRole.Arn
+    Code:
+      S3Bucket: main-openmarket-serverless-order-workflow
+      S3Key: process-order.zip
+    Timeout: 30
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref OrdersTable
   #################################################
   # SQS Event Source Mapping
   #################################################
