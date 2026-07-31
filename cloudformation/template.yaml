@@ -93,38 +93,40 @@ Resources:
   #################################################
 
   ProcessOrderLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: OpenMarket-ProcessOrderLambdaRole
+  Type: AWS::IAM::Role
+  Properties:
+    RoleName: OpenMarket-ProcessOrderLambdaRole
 
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-          - Effect: Allow
-            Action:
-              - dynamodb:PutItem
+    AssumeRolePolicyDocument:
+      Version: "2012-10-17"
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+
+    ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+    Policies:
+      - PolicyName: ProcessOrderPolicy
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+
+            - Effect: Allow
+              Action:
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+                - sqs:GetQueueAttributes
+              Resource: !GetAtt OrderQueue.Arn
+
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
               Resource: !GetAtt OrdersTable.Arn
-
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-
-      Policies:
-        - PolicyName: SQSReceiveMessagePolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - sqs:ReceiveMessage
-                  - sqs:DeleteMessage
-                  - sqs:GetQueueAttributes
-                Resource: !GetAtt OrderQueue.Arn
                 
   #################################################
   # Process Order Lambda
