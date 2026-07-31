@@ -1,4 +1,12 @@
 import json
+import boto3
+from datetime import datetime
+import os
+
+dynamodb = boto3.resource("dynamodb")
+
+TABLE_NAME = os.environ["TABLE_NAME"]
+table = dynamodb.Table(TABLE_NAME)
 
 def lambda_handler(event, context):
 
@@ -10,12 +18,20 @@ def lambda_handler(event, context):
         print("Processing Order")
         print("=" * 50)
 
-        print(f"Order ID : {order['orderId']}")
-        print(f"Customer : {order['customer']}")
-        print(f"Product  : {order['product']}")
-        print(f"Quantity : {order['quantity']}")
+        print(order)
 
-        print("Order Processed Successfully")
+        table.put_item(
+            Item={
+                "OrderId": order["orderId"],
+                "Customer": order["customer"],
+                "Product": order["product"],
+                "Quantity": order["quantity"],
+                "Status": "Processed",
+                "ProcessedTime": datetime.utcnow().isoformat()
+            }
+        )
+
+        print("Order saved to DynamoDB")
 
     return {
         "statusCode": 200
