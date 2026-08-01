@@ -34,6 +34,15 @@ Resources:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: OpenMarketOrderNotifications
+  ####################################################
+  # SNS Email Subscription
+  #################################################
+  OrderNotificationSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref OrderNotificationTopic
+      Endpoint: naren1dhiran@gmail.com
   #################################################
   # IAM Role for AcceptOrder Lambda
   #################################################
