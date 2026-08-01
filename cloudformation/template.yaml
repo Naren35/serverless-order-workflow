@@ -104,6 +104,10 @@ Resources:
                 Action:
                   - dynamodb:PutItem
                 Resource: !GetAtt OrdersTable.Arn
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref OrderNotificationTopic
 
   #################################################
   # Accept Order Lambda
