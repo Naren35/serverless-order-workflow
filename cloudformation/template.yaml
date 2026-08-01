@@ -144,6 +144,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref OrdersTable
+          TOPIC_ARN: !Ref OrderNotificationTopic
 
   #################################################
   # SQS Event Source Mapping
